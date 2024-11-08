@@ -29,7 +29,7 @@
                       :src-dirs ["src"]
                       :class-dir class-dir})
       (b/uber {:class-dir class-dir
-               :uber-file uber-file
+               :uber-file jar-file
                :basis basis
                :main 'clj-dynamo-helpers.core}))
 
@@ -42,5 +42,5 @@
 
 (defn deploy [_]
       (dd/deploy {:installer :remote
-                  :artifact uber-file
+                  :artifact jar-file
                   :pom-file (b/pom-path {:lib lib :class-dir class-dir})}))

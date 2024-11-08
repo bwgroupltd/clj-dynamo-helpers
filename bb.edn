@@ -16,9 +16,6 @@
                              :task (do (shell {:dir "."} "clojure -Ttools install-latest :lib com.github.liquidz/antq :as antq")
                                        (shell {:dir "."} "clojure -Tantq outdated :check-clojure-tools true :upgrade true"))}
 
-                  pom       {:doc  "pom"
-                             :task (shell {:dir "."} "clojure -Spom")}
-
                   deploy    {:doc  "deploy"
                              :task (shell {:dir "."} "env CLOJARS_USERNAME=bigsy clojure -T:build deploy")}
 
