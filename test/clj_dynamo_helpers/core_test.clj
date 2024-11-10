@@ -79,16 +79,35 @@
         {:buffer {:B buffer}}   {:buffer buffer}))))
 
 (deftest roundtrip-test
-  (testing "Data survives roundtrip conversion"
-    (let [original {:string "hello"
-                   :number 42
-                   :float 3.14
-                   :bool true
-                   :nil nil
-                   :list ["a" "b"]
-                   :nested {:x 1 :y "two"}
-                   :complex [{:id 1} {:id 2}]}]
+  (testing "Data survives roundtrip conversion with all DynamoDB types and deep nesting"
+    (let [bytes (.getBytes "hello")
+          buffer (ByteBuffer/wrap bytes)
+          original {:string "hello"
+                    :number 42
+                    :float 3.14
+                    :bool true
+                    :nil nil
+                    :binary-data {:bytes bytes
+                                  :buffer buffer}
+                    :string-set #{"a" "b" "c"}
+                    :number-set #{1 2 3}
+                    :list ["a" "b" "c"]
+                    :nested {:x 1
+                             :y "two"
+                             :deep {:bool false
+                                    :nums #{42 43}
+                                    :deeper {:str "deep"
+                                             :list ["x" "y"]
+                                             :map {:a 1 :b 2}}}}
+                    :complex [{:id 1
+                               :data {:sets #{1 2}
+                                      :flags {:active true
+                                              :pending false}}}
+                              {:id 2
+                               :data {:sets #{3 4}
+                                      :flags {:active false
+                                              :pending true}}}]}]
       (is (= original
              (-> original
                  map->attributevalue
-                 dynamo->clojure)))))) 
+                 dynamo->clojure))))))
