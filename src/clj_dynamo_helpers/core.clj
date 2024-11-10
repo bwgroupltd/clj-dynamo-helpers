@@ -1,25 +1,29 @@
 (ns clj-dynamo-helpers.core
   (:import (java.nio ByteBuffer)))
 
+(declare map->attributevalue)
+
+
+(defn- value->attributevalue [v]
+  (cond
+    (map? v) {:M (map->attributevalue v)}
+    (vector? v) {:L (mapv value->attributevalue v)}
+    (integer? v) {:N (str v)}
+    (float? v) {:N (str v)}
+    (boolean? v) {:BOOL v}
+    (nil? v) {:NULL true}
+    (bytes? v) {:B v}
+    (instance? ByteBuffer v) {:B v}
+    (and (set? v) (every? string? v)) {:SS (vec v)}
+    (and (set? v) (every? number? v)) {:NS (vec (map str v))}
+    (string? v) {:S v}
+    :else (throw (ex-info "Unsupported DynamoDB type"
+                          {:value v :type (type v)}))))
+
 (defn map->attributevalue [m]
   (into {}
         (for [[k v] m]
-          [(keyword k)
-           (cond
-             (map? v) {:M (map->attributevalue v)}
-             (vector? v) {:L (mapv (fn [item]
-                                   (cond
-                                     (map? item) {:M (map->attributevalue item)}
-                                     :else {:S (str item)})) v)}
-             (integer? v) {:N (str v)}
-             (float? v) {:N (str v)}
-             (boolean? v) {:BOOL v}
-             (nil? v) {:NULL true}
-             (bytes? v) {:B v}
-             (instance? ByteBuffer v) {:B v}
-             (and (set? v) (every? string? v)) {:SS (vec v)}
-             (and (set? v) (every? number? v)) {:NS (vec (map str v))}
-             :else {:S (str v)})])))
+          [(keyword k) (value->attributevalue v)])))
 
 (defn dynamo->clojure [m]
   (into {} (for [[k v] m]
