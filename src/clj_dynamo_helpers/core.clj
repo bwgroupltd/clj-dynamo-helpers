@@ -1,7 +1,7 @@
 (ns clj-dynamo-helpers.core
   (:import (java.nio ByteBuffer)))
 
-(declare map->attributevalue)
+(declare map->attributevalue dynamo->clojure)
 
 
 (defn- value->attributevalue [v]
@@ -16,6 +16,7 @@
     (instance? ByteBuffer v) {:B v}
     (and (set? v) (every? string? v)) {:SS (vec v)}
     (and (set? v) (every? number? v)) {:NS (vec (map str v))}
+    (and (set? v) (every? #(instance? ByteBuffer %) v)) {:BS (vec v)}
     (string? v) {:S v}
     :else (throw (ex-info "Unsupported DynamoDB type"
                           {:value v :type (type v)}))))
@@ -25,30 +26,25 @@
         (for [[k v] m]
           [(keyword k) (value->attributevalue v)])))
 
+(defn- parse-number [value]
+  (if (re-find #"\." value)
+    (Double/parseDouble value)
+    (Integer/parseInt value)))
+
+(defn- convert-value [[type value]]
+  (case type
+    :S value
+    :N (parse-number value)
+    :BOOL value
+    :NULL nil
+    :B value
+    :SS (set value)
+    :NS (set (map parse-number value))
+    :BS (set value)
+    :L (mapv #(convert-value (first %)) value)
+    :M (dynamo->clojure value)
+    value))
+
 (defn dynamo->clojure [m]
-  (into {} (for [[k v] m]
-             [k (let [[type value] (first v)]
-                  (case type
-                    :S value
-                    :N (if (re-find #"\." value)
-                         (Double/parseDouble value)
-                         (Integer/parseInt value))
-                    :BOOL value
-                    :NULL nil
-                    :B value
-                    :SS (set value)
-                    :NS (set (map #(if (re-find #"\." %)
-                                   (Double/parseDouble %)
-                                   (Integer/parseInt %)) value))
-                    :BS (set value)
-                    :L (mapv (fn [item]
-                             (let [[item-type item-value] (first item)]
-                               (case item-type
-                                 :M (dynamo->clojure item-value)
-                                 :S item-value
-                                 :N (if (re-find #"\." item-value)
-                                     (Double/parseDouble item-value)
-                                     (Integer/parseInt item-value))
-                                 item-value))) value)
-                    :M (dynamo->clojure value)
-                    value))])))
+  (into {} (map (fn [[k v]]
+                  [k (convert-value (first v))]) m)))
