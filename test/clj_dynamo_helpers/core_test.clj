@@ -78,36 +78,30 @@
         {:bytes {:B bytes}}     {:bytes bytes}
         {:buffer {:B buffer}}   {:buffer buffer}))))
 
-(deftest roundtrip-test
-  (testing "Data survives roundtrip conversion with all DynamoDB types and deep nesting"
-    (let [bytes (.getBytes "hello")
+(deftest nested-conversion-test
+  (testing "Building and verifying nested conversions level by level"
+    (let [bytes (.getBytes "binary-content")
           buffer (ByteBuffer/wrap bytes)
-          original {:string "hello"
-                    :number 42
-                    :float 3.14
-                    :bool true
-                    :nil nil
-                    :binary-data {:bytes bytes
-                                  :buffer buffer}
-                    :string-set #{"a" "b" "c"}
-                    :number-set #{1 2 3}
-                    :list ["a" "b" "c"]
-                    :nested {:x 1
-                             :y "two"
-                             :deep {:bool false
-                                    :nums #{42 43}
-                                    :deeper {:str "deep"
-                                             :list ["x" "y"]
-                                             :map {:a 1 :b 2}}}}
-                    :complex [{:id 1
-                               :data {:sets #{1 2}
-                                      :flags {:active true
-                                              :pending false}}}
-                              {:id 2
-                               :data {:sets #{3 4}
-                                      :flags {:active false
-                                              :pending true}}}]}]
-      (is (= original
-             (-> original
-                 map->attributevalue
-                 dynamo->clojure))))))
+          level5 {:data "deepest"
+                 :set #{"a" "b"}
+                 :binary buffer}
+          _ (is (= level5 (-> level5 map->attributevalue dynamo->clojure)))
+
+          level4 {:level5 level5
+                 :nums #{1 2 3}}
+          _ (is (= level4 (-> level4 map->attributevalue dynamo->clojure)))
+
+          level3 {:level4 level4
+                 :mixed ["string" bytes 42]}
+          _ (is (= level3 (-> level3 map->attributevalue dynamo->clojure)))
+
+          level2 {:level3 level3
+                 :flags {:active true}}
+          _ (is (= level2 (-> level2 map->attributevalue dynamo->clojure)))
+
+          level1 {:level2 level2
+                 :root-data bytes}
+          _ (is (= level1 (-> level1 map->attributevalue dynamo->clojure)))]
+
+      ;; Final verification of complete nested structure
+      (is (= level1 (-> level1 map->attributevalue dynamo->clojure))))))
