@@ -26,7 +26,10 @@
                   format    {:doc  "Formats codebase"
                              :task (shell
                                      {:dir "src"}
-                                     "cljstyle fix")}}}
+                                     "cljstyle fix")}
+
+                  release            {:doc     "release"
+                                      :depends [uberjar deploy]}}}
 
 
 

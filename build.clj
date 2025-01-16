@@ -39,10 +39,6 @@
                   :version    version
                   :jar-file   jar-file
                   :class-dir  class-dir}))
-:installer :remote
-:sign-releases? true
-:sign-key-id "1C33430999AA1C3C243A302689CACBAD9979E3C5"
-:artifact "deps-deploy.jar"
 
 (defn deploy [_]
       (dd/deploy {:repository {"releases" {:url "s3p://repo.bowerswilkins.net/releases/"}}
