@@ -2,7 +2,7 @@
   (:require [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
 
-(def lib 'org.clojars.bigsy/clj-dynamo-helpers)
+(def lib 'audiogum/clj-dynamo-helpers)
 (def version "0.0.4")
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
@@ -18,7 +18,7 @@
                     :version version
                     :basis basis
                     :src-dirs ["src"]
-                    :scm {:url "https://github.com/bigsy/clj-dynamo-helpers"}
+                    :scm {:url "https://github.com/bwgroupltd/clj-dynamo-helpers"}
                     :pom-data  [[:licenses
                                  [:license
                                   [:name "Eclipse Public License 1.0"]
@@ -39,8 +39,13 @@
                   :version    version
                   :jar-file   jar-file
                   :class-dir  class-dir}))
+:installer :remote
+:sign-releases? true
+:sign-key-id "1C33430999AA1C3C243A302689CACBAD9979E3C5"
+:artifact "deps-deploy.jar"
 
 (defn deploy [_]
-      (dd/deploy {:installer :remote
+      (dd/deploy {:repository {"releases" {:url "s3p://repo.bowerswilkins.net/releases/"}}
+                  :installer :remote
                   :artifact jar-file
                   :pom-file (b/pom-path {:lib lib :class-dir class-dir})}))

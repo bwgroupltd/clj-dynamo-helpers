@@ -17,7 +17,7 @@
                                        (shell {:dir "."} "clojure -Tantq outdated :check-clojure-tools true :upgrade true"))}
 
                   deploy    {:doc  "deploy"
-                             :task (shell {:dir "."} "env CLOJARS_USERNAME=bigsy clojure -T:build deploy")}
+                             :task (shell {:dir "."} "clojure -T:build deploy")}
 
                   uberjar   {:doc              "builds the uberjar"
                              :override-builtin true
