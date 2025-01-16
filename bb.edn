@@ -17,7 +17,11 @@
                                        (shell {:dir "."} "clojure -Tantq outdated :check-clojure-tools true :upgrade true"))}
 
                   deploy    {:doc  "deploy"
-                             :task (shell {:dir "."} "clojure -T:build deploy")}
+                             :depends [uberjar pom]
+                             :task (shell {:dir "."} "env AWS_PROFILE=sredev clojure -T:build deploy")}
+
+                  pom       {:doc "make pom"
+                             :task (shell {:dir "."} "clojure -X:deps mvn-pom")}
 
                   uberjar   {:doc              "builds the uberjar"
                              :override-builtin true
@@ -26,10 +30,7 @@
                   format    {:doc  "Formats codebase"
                              :task (shell
                                      {:dir "src"}
-                                     "cljstyle fix")}
-
-                  release            {:doc     "release"
-                                      :depends [uberjar deploy]}}}
+                                     "cljstyle fix")}}}
 
 
 
